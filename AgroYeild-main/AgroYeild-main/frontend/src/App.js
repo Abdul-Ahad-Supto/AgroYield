@@ -1,24 +1,39 @@
 import React from 'react';
 import { ChakraProvider, Box } from '@chakra-ui/react';
 import { Routes, Route } from 'react-router-dom';
-import { Web3Provider } from './contexts/Web3Context';
+import { Web3Provider } from './contexts/Web3Context.Backup';
+import theme from './theme';
+import React from 'react';
+import { ChakraProvider, Box } from '@chakra-ui/react';
+import { Routes, Route, Navigate } from 'react-router-dom';
+import { AuthProvider } from './contexts/AuthContext';
 import theme from './theme';
 
 // Layout Components
 import Navbar from './components/layout/Navbar';
 import Footer from './components/layout/Footer';
 
+
+// Authentication Components
+import Auth from './pages/Auth';
+import KYCForm from './pages/KYCForm';
+import ProtectedRoute from './components/ProtectedRoute';
+
+
 // Pages
 import Home from './pages/Home';
 import Dashboard from './pages/Dashboard';
 import Projects from './pages/Projects';
-import ProjectDetail from './pages/ProjectDetail';
-import CreateProject from './pages/CreateProject';
-import VerifyProject from './pages/VerifyProject';
 import Governance from './pages/Governance';
+import ProjectDetail from './pages/ProjectDetail';
+import VerifyProject from './pages/VerifyProject';
+import CreateProject from './pages/CreateProject';
 import Profile from './pages/Profile';
 import NotFound from './pages/NotFound';
+
+// Admin Pages
 import AdminDashboard from './pages/AdminDashboard';
+import KYCDashboard from './pages/KYCDashboard';
 
 function App() {
   return (

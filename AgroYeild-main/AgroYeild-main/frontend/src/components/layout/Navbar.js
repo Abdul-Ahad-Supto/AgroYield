@@ -22,7 +22,7 @@ import {
 import { Link as RouterLink, useNavigate } from 'react-router-dom';
 import { MoonIcon, SunIcon, HamburgerIcon, CloseIcon } from '@chakra-ui/icons';
 import { FaEthereum, FaShieldAlt } from 'react-icons/fa';
-import { useWeb3 } from '../../contexts/Web3Context';
+import { useWeb3 } from '../../contexts/Web3Context.Backup';
 
 const NavLink = ({ children, to }) => (
   <Link

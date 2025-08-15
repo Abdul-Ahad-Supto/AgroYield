@@ -40,7 +40,7 @@ import {
 } from '@chakra-ui/react';
 import { FaUpload, FaCheck, FaArrowRight, FaArrowLeft } from 'react-icons/fa';
 import { useContracts } from '../hooks/useContracts'; // Fixed import path
-import { useWeb3 } from '../contexts/Web3Context'; // Fixed import path
+import { useWeb3 } from '../contexts/Web3Context.Backup'; // Fixed import path
 
 const steps = [
   { title: 'Basic Info', description: 'Project details' },

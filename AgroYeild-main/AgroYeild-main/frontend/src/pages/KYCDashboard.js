@@ -57,7 +57,7 @@ import {
   FaClock,
   FaBolt 
 } from 'react-icons/fa';
-import { useWeb3 } from '../contexts/Web3Context';
+import { useWeb3 } from '../contexts/Web3Context.Backup';
 
 // Demo mode configuration
 const DEMO_CONFIG = {
