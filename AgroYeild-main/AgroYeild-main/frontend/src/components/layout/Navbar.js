@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   Box, 
   Flex, 
@@ -21,8 +21,9 @@ import {
 } from '@chakra-ui/react';
 import { Link as RouterLink, useNavigate } from 'react-router-dom';
 import { MoonIcon, SunIcon, HamburgerIcon, CloseIcon } from '@chakra-ui/icons';
-import { FaEthereum } from 'react-icons/fa';
+import { FaEthereum, FaShieldAlt } from 'react-icons/fa';
 import { useWeb3 } from '../../contexts/Web3Context';
+import { useContracts } from '../../hooks/useContracts';
 
 const NavLink = ({ children, to }) => (
   <Link
@@ -45,12 +46,34 @@ const Navbar = () => {
   const { isOpen, onOpen, onClose } = useDisclosure();
   const { account, isConnected, connectWallet } = useWeb3();
   const navigate = useNavigate();
+  const [userRoles, setUserRoles] = useState({});
+  const [isAdmin, setIsAdmin] = useState(false)
+  // Check user roles when connected
+  useEffect(() => {
+    const checkPermissions = async () => {
+      if (isConnected && checkUserRoles) {
+        try {
+          const roles = await checkUserRoles();
+          setUserRoles(roles);
+          setIsAdmin(roles.isValidator || account === process.env.REACT_APP_ADMIN_ADDRESS);
+        } catch (error) {
+          console.error('Error checking permissions:', error);
+        }
+      }
+    };
+
+    checkPermissions();
+  }, [isConnected, account, checkUserRoles]);
 
   const Links = [
     { name: 'Projects', path: '/projects' },
     { name: 'Governance', path: '/governance' },
     { name: 'Create Project', path: '/create-project' },
   ];
+  // Add admin link for authorized users
+  if (isAdmin) {
+    Links.push({ name: 'Admin Panel', path: '/admin', admin: true });
+  }
 
   const formatAddress = (address) => {
     if (!address) return '';

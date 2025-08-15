@@ -18,6 +18,7 @@ import VerifyProject from './pages/VerifyProject';
 import Governance from './pages/Governance';
 import Profile from './pages/Profile';
 import NotFound from './pages/NotFound';
+import AdminDashboard from './pages/AdminDashboard';
 
 function App() {
   return (
