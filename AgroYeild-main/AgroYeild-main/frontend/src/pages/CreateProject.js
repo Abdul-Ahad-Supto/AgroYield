@@ -39,8 +39,8 @@ import {
   Flex,
 } from '@chakra-ui/react';
 import { FaUpload, FaCheck, FaArrowRight, FaArrowLeft } from 'react-icons/fa';
-import { useContracts } from './hooks/useContracts';
-import { useWallet } from './hooks/useWallet';
+import { useContracts } from '../hooks/useContracts'; // Fixed import path
+import { useWeb3 } from '../contexts/Web3Context'; // Fixed import path
 
 const steps = [
   { title: 'Basic Info', description: 'Project details' },
@@ -68,7 +68,7 @@ function StepCircle({ isCompleted, isActive, stepIndex, ...props }) {
 }
 
 const CreateProject = () => {
-  const { isConnected } = useWallet();
+  const { isConnected } = useWeb3(); // Fixed hook usage
   const { createProject, loading } = useContracts();
   const [currentStep, setCurrentStep] = useState(0);
   const [formData, setFormData] = useState({
@@ -130,6 +130,65 @@ const CreateProject = () => {
     }
   };
   
+  const validateForm = () => {
+    if (!formData.title) {
+      toast({
+        title: 'Missing Information',
+        description: 'Project title is required.',
+        status: 'error',
+        duration: 5000,
+        isClosable: true,
+      });
+      return false;
+    }
+    
+    if (!formData.description) {
+      toast({
+        title: 'Missing Information',
+        description: 'Project description is required.',
+        status: 'error',
+        duration: 5000,
+        isClosable: true,
+      });
+      return false;
+    }
+    
+    if (!formData.targetAmount || parseFloat(formData.targetAmount) <= 0) {
+      toast({
+        title: 'Invalid Amount',
+        description: 'Please enter a valid target amount.',
+        status: 'error',
+        duration: 5000,
+        isClosable: true,
+      });
+      return false;
+    }
+    
+    if (!formData.location) {
+      toast({
+        title: 'Missing Information',
+        description: 'Project location is required.',
+        status: 'error',
+        duration: 5000,
+        isClosable: true,
+      });
+      return false;
+    }
+    
+    if (!formData.category) {
+      toast({
+        title: 'Missing Information',
+        description: 'Project category is required.',
+        status: 'error',
+        duration: 5000,
+        isClosable: true,
+      });
+      return false;
+    }
+    
+    return true;
+  };
+  
   const handleSubmit = async (e) => {
     e.preventDefault();
     
@@ -144,6 +203,10 @@ const CreateProject = () => {
       return;
     }
 
+    if (!validateForm()) {
+      return;
+    }
+
     try {
       const result = await createProject({
         title: formData.title,
@@ -151,7 +214,8 @@ const CreateProject = () => {
         targetAmount: formData.targetAmount,
         location: formData.location,
         category: formData.category,
-        duration: 90
+        duration: 90, // Default 90 days
+        ipfsHash: 'QmDefault' // In a real app, upload to IPFS first
       });
 
       console.log('Project created:', result);
@@ -179,6 +243,13 @@ const CreateProject = () => {
 
     } catch (error) {
       console.error('Project creation failed:', error);
+      toast({
+        title: 'Project Creation Failed',
+        description: error.message || 'An unexpected error occurred.',
+        status: 'error',
+        duration: 5000,
+        isClosable: true,
+      });
     }
   };
 
@@ -218,11 +289,12 @@ const CreateProject = () => {
                 onChange={handleInputChange}
                 placeholder="Select category"
               >
-                <option value="crops">Crop Farming</option>
-                <option value="livestock">Livestock</option>
-                <option value="fisheries">Fisheries</option>
-                <option value="horticulture">Horticulture</option>
-                <option value="agroforestry">Agroforestry</option>
+                <option value="Rice Cultivation">Rice Cultivation</option>
+                <option value="Fruit Cultivation">Fruit Cultivation</option>
+                <option value="Vegetable Cultivation">Vegetable Cultivation</option>
+                <option value="Livestock">Livestock</option>
+                <option value="Fisheries">Fisheries</option>
+                <option value="Agroforestry">Agroforestry</option>
               </Select>
             </FormControl>
             
@@ -298,7 +370,7 @@ const CreateProject = () => {
           <VStack spacing={6} align="stretch">
             <FormControl isRequired>
               <FormLabel>Funding Goal (BDT)</FormLabel>
-              <NumberInput min={0} precision={2}>
+              <NumberInput min={1000} precision={0}>
                 <NumberInputField 
                   name="targetAmount"
                   value={formData.targetAmount}
@@ -311,11 +383,11 @@ const CreateProject = () => {
                 </NumberInputStepper>
               </NumberInput>
               <FormHelperText>
-                How much funding do you need to complete this project?
+                How much funding do you need to complete this project? (Minimum: 1,000 BDT)
               </FormHelperText>
             </FormControl>
             
-            <FormControl isRequired>
+            <FormControl>
               <FormLabel>Funding Deadline</FormLabel>
               <Input
                 type="date"
@@ -358,7 +430,7 @@ const CreateProject = () => {
                   <Heading size="md">{milestone.name}</Heading>
                 </CardHeader>
                 <CardBody pt={0}>
-                  <FormControl mb={4} isRequired>
+                  <FormControl mb={4}>
                     <FormLabel>Description</FormLabel>
                     <Textarea
                       value={milestone.description}
@@ -368,7 +440,7 @@ const CreateProject = () => {
                     />
                   </FormControl>
                   
-                  <FormControl isRequired>
+                  <FormControl>
                     <FormLabel>Target Completion Date</FormLabel>
                     <Input
                       type="date"
@@ -415,7 +487,7 @@ const CreateProject = () => {
                   <SimpleGrid columns={2} spacing={4}>
                     <Box>
                       <Text fontWeight="medium">Funding Goal</Text>
-                      <Text>{formData.targetAmount} BDT</Text>
+                      <Text>{formData.targetAmount ? `${formData.targetAmount} BDT` : 'Not set'}</Text>
                     </Box>
                     <Box>
                       <Text fontWeight="medium">Funding Deadline</Text>
@@ -536,6 +608,7 @@ const CreateProject = () => {
                     ml="auto"
                     isLoading={loading}
                     loadingText="Creating Project..."
+                    isDisabled={!isConnected}
                   >
                     Submit Project
                   </Button>
