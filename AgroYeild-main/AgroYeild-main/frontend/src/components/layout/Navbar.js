@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { 
   Box, 
   Flex, 
@@ -23,7 +23,6 @@ import { Link as RouterLink, useNavigate } from 'react-router-dom';
 import { MoonIcon, SunIcon, HamburgerIcon, CloseIcon } from '@chakra-ui/icons';
 import { FaEthereum, FaShieldAlt } from 'react-icons/fa';
 import { useWeb3 } from '../../contexts/Web3Context';
-import { useContracts } from '../../hooks/useContracts';
 
 const NavLink = ({ children, to }) => (
   <Link
@@ -40,22 +39,63 @@ const NavLink = ({ children, to }) => (
     {children}
   </Link>
 );
-console.log("Navbar rendered")
+
 const Navbar = () => {
   const { colorMode, toggleColorMode } = useColorMode();
   const { isOpen, onOpen, onClose } = useDisclosure();
-  const { account, isConnected, connectWallet } = useWeb3();
+  
+  // ✅ FIXED: Added disconnectWallet
+  const { 
+    account, 
+    isConnected, 
+    connectWallet, 
+    disconnectWallet, 
+    contracts 
+  } = useWeb3();
+  
   const navigate = useNavigate();
   const [userRoles, setUserRoles] = useState({});
-  const [isAdmin, setIsAdmin] = useState(false)
-  // Check user roles when connected
+  const [isAdmin, setIsAdmin] = useState(false);
+
+  // ✅ FIXED: Memoized checkUserRoles function
+  const checkUserRoles = useCallback(async () => {
+    if (!contracts || !account) {
+      return { isFarmer: false, isInvestor: false, isValidator: false };
+    }
+
+    try {
+      const roles = {};
+      
+      if (contracts.projectFactory) {
+        const FARMER_ROLE = await contracts.projectFactory.FARMER_ROLE();
+        const VALIDATOR_ROLE = await contracts.projectFactory.VALIDATOR_ROLE();
+        roles.isFarmer = await contracts.projectFactory.hasRole(FARMER_ROLE, account);
+        roles.isValidator = await contracts.projectFactory.hasRole(VALIDATOR_ROLE, account);
+      }
+      
+      if (contracts.investmentManager) {
+        const INVESTOR_ROLE = await contracts.investmentManager.INVESTOR_ROLE();
+        roles.isInvestor = await contracts.investmentManager.hasRole(INVESTOR_ROLE, account);
+      }
+      
+      return roles;
+    } catch (error) {
+      console.error('Error checking user roles:', error);
+      return { isFarmer: false, isInvestor: false, isValidator: false };
+    }
+  }, [contracts, account]);
+
+  // ✅ FIXED: Added checkUserRoles to dependencies
   useEffect(() => {
     const checkPermissions = async () => {
-      if (isConnected && checkUserRoles) {
+      if (isConnected && contracts) {
         try {
           const roles = await checkUserRoles();
           setUserRoles(roles);
-          setIsAdmin(roles.isValidator || account === process.env.REACT_APP_ADMIN_ADDRESS);
+          setIsAdmin(
+            roles.isValidator || 
+            account?.toLowerCase() === process.env.REACT_APP_ADMIN_ADDRESS?.toLowerCase()
+          );
         } catch (error) {
           console.error('Error checking permissions:', error);
         }
@@ -63,17 +103,24 @@ const Navbar = () => {
     };
 
     checkPermissions();
-  }, [isConnected, account, checkUserRoles]);
+  }, [isConnected, contracts, account, checkUserRoles]);
 
-  const Links = [
-    { name: 'Projects', path: '/projects' },
-    { name: 'Governance', path: '/governance' },
-    { name: 'Create Project', path: '/create-project' },
-  ];
-  // Add admin link for authorized users
-  if (isAdmin) {
-    Links.push({ name: 'Admin Panel', path: '/admin', admin: true });
-  }
+  // ✅ FIXED: Don't mutate original array
+  const getNavigationLinks = () => {
+    const baseLinks = [
+      { name: 'Projects', path: '/projects' },
+      { name: 'Governance', path: '/governance' },
+      { name: 'Create Project', path: '/create-project' },
+    ];
+
+    if (isAdmin) {
+      return [...baseLinks, { name: 'Admin Panel', path: '/admin', admin: true }];
+    }
+    
+    return baseLinks;
+  };
+
+  const Links = getNavigationLinks();
 
   const formatAddress = (address) => {
     if (!address) return '';
@@ -90,6 +137,7 @@ const Navbar = () => {
           display={{ md: 'none' }}
           onClick={isOpen ? onClose : onOpen}
         />
+        
         <HStack spacing={8} alignItems={'center'}>
           <Box display="flex" alignItems="center">
             <FaEthereum size={24} />
@@ -101,6 +149,11 @@ const Navbar = () => {
             {Links.map((link) => (
               <NavLink key={link.name} to={link.path}>
                 {link.name}
+                {link.admin && (
+                  <Badge ml={1} colorScheme="purple" size="sm">
+                    Admin
+                  </Badge>
+                )}
               </NavLink>
             ))}
           </HStack>
@@ -130,6 +183,11 @@ const Navbar = () => {
                     <Text display={{ base: 'none', md: 'flex' }}>
                       {formatAddress(account)}
                     </Text>
+                    {isAdmin && (
+                      <Badge colorScheme="purple" size="sm">
+                        Admin
+                      </Badge>
+                    )}
                   </HStack>
                 </MenuButton>
                 <MenuList zIndex={9999}>
@@ -139,8 +197,22 @@ const Navbar = () => {
                   <MenuItem onClick={() => navigate('/profile')}>
                     Profile
                   </MenuItem>
+                  {isAdmin && (
+                    <>
+                      <MenuDivider />
+                      <MenuItem onClick={() => navigate('/admin')}>
+                        <HStack>
+                          <FaShieldAlt />
+                          <Text>Admin Panel</Text>
+                        </HStack>
+                      </MenuItem>
+                    </>
+                  )}
                   <MenuDivider />
-                  <MenuItem>Disconnect</MenuItem>
+                  {/* ✅ FIXED: Added onClick handler */}
+                  <MenuItem onClick={disconnectWallet} color="red.500">
+                    Disconnect Wallet
+                  </MenuItem>
                 </MenuList>
               </Menu>
             ) : (

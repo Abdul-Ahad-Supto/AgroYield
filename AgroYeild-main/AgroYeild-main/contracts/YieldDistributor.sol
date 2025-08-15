@@ -37,7 +37,7 @@ contract YieldDistributor is AccessControl, ReentrancyGuard {
     event DistributionCreated(uint256 indexed projectId, uint256 amount, bytes32 merkleRoot);
     event YieldClaimed(address indexed investor, uint256 indexed projectId, uint256 amount);
     
-    constructor(address _projectFactoryAddress, address _investmentManagerAddress) {
+    constructor(address _projectFactoryAddress, address payable _investmentManagerAddress) {
         require(_projectFactoryAddress != address(0), "Invalid project factory address");
         require(_investmentManagerAddress != address(0), "Invalid investment manager address");
         

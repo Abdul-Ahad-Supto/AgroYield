@@ -79,7 +79,7 @@ contract InvestmentManager is AccessControl, ReentrancyGuard {
     event ProjectDefaulted(uint256 indexed projectId, uint256 amountOwed);
     event FundsReleasedToFarmer(uint256 indexed projectId, uint256 amount, address farmer);
     
-    constructor(address _projectFactoryAddress, address _usdcAddress) {
+    constructor(address _projectFactoryAddress, address payable _usdcAddress) {
         require(_projectFactoryAddress != address(0), "Invalid project factory address");
         require(_usdcAddress != address(0), "Invalid USDC address");
         
@@ -293,7 +293,13 @@ contract InvestmentManager is AccessControl, ReentrancyGuard {
     /**
     * @dev Get yield information for a project
     * @param projectId Project ID
-    * @return Comprehensive loan and yield information
+    * @return isCompleted Comprehensive loan and yield information
+    * @return principalAmount Principal amount borrowed
+    * @return yieldAmount Yield amount owed
+    * @return totalRepayment Total repayment required
+    * @return isFullyRepaid Whether loan is fully repaid
+    * @return repaymentDeadline Repayment deadline timestamp
+    * @return farmer Farmer who borrowed
     */
     function getProjectYieldInfo(uint256 projectId) external view returns (
         bool isCompleted,

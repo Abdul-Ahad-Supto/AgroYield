@@ -108,62 +108,75 @@ export const Web3Provider = ({ children }) => {
 
   // Memoize wallet connection function
   const connectWallet = useCallback(async () => {
-    if (isLoading) return; // Prevent multiple simultaneous calls
-    
+  if (isLoading) return;
+
+  try {
+    setIsLoading(true);
+
+    const detectedProvider = await detectEthereumProvider();
+    if (!detectedProvider) throw new Error('Please install MetaMask!');
+
+    // Switch network
     try {
-      setIsLoading(true);
-      
-      // Detect MetaMask provider
-      const detectedProvider = await detectEthereumProvider();
-      
-      if (!detectedProvider) {
-        throw new Error('Please install MetaMask!');
+      await window.ethereum.request({
+        method: 'wallet_switchEthereumChain',
+        params: [{ chainId: '0x13882' }],
+      });
+    } catch (switchError) {
+      if (switchError.code === 4902) {
+        // Add network if it doesn’t exist
+        await window.ethereum.request({
+          method: 'wallet_addEthereumChain',
+          params: [{
+            chainId: '0x13882',
+            chainName: 'Polygon Amoy Testnet',
+            nativeCurrency: { name: 'MATIC', symbol: 'MATIC', decimals: 18 },
+            rpcUrls: ['https://rpc-amoy.polygon.technology'],
+            blockExplorerUrls: ['https://amoy.polygonscan.com'],
+          }],
+        });
+      } else {
+        throw switchError; // rethrow other errors
       }
-      
-      // Request account access
-      const accounts = await window.ethereum.request({ 
-        method: 'eth_requestAccounts' 
-      });
-      
-      if (!accounts || accounts.length === 0) {
-        throw new Error('No accounts found');
-      }
-      
-      const ethersProvider = new ethers.providers.Web3Provider(detectedProvider);
-      const ethersSigner = ethersProvider.getSigner();
-      const network = await ethersProvider.getNetwork();
-      
-      // Batch state updates to prevent multiple renders
-      setProvider(ethersProvider);
-      setSigner(ethersSigner);
-      setAccount(accounts[0]);
-      setChainId(network.chainId.toString());
-      setIsConnected(true);
-      
-      // Initialize contracts
-      initializeContracts(ethersSigner);
-      
-      toast({
-        title: 'Wallet Connected',
-        description: `Connected as ${accounts[0].substring(0, 6)}...${accounts[0].substring(38)}`,
-        status: 'success',
-        duration: 5000,
-        isClosable: true,
-      });
-      
-    } catch (error) {
-      console.error('Error connecting wallet:', error);
-      toast({
-        title: 'Error',
-        description: error.message,
-        status: 'error',
-        duration: 5000,
-        isClosable: true,
-      });
-    } finally {
-      setIsLoading(false);
     }
-  }, [isLoading, initializeContracts, toast]);
+
+    // Request account access after network is ready
+    const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
+    if (!accounts || accounts.length === 0) throw new Error('No accounts found');
+
+    const ethersProvider = new ethers.providers.Web3Provider(detectedProvider);
+    const ethersSigner = ethersProvider.getSigner();
+    const network = await ethersProvider.getNetwork();
+
+    setProvider(ethersProvider);
+    setSigner(ethersSigner);
+    setAccount(accounts[0]);
+    setChainId(network.chainId.toString());
+    setIsConnected(true);
+
+    initializeContracts(ethersSigner);
+
+    toast({
+      title: 'Wallet Connected',
+      description: `Connected as ${accounts[0].substring(0, 6)}...${accounts[0].substring(38)}`,
+      status: 'success',
+      duration: 5000,
+      isClosable: true,
+    });
+
+  } catch (error) {
+    console.error('Error connecting wallet:', error);
+    toast({
+      title: 'Error',
+      description: error.message,
+      status: 'error',
+      duration: 5000,
+      isClosable: true,
+    });
+  } finally {
+    setIsLoading(false);
+  }
+}, [isLoading, initializeContracts, toast]);
 
   // Memoize disconnect function
   const disconnectWallet = useCallback(() => {
@@ -231,54 +244,54 @@ export const Web3Provider = ({ children }) => {
   }, [disconnectWallet]); // Only depend on disconnectWallet which is memoized
 
   // Check wallet connection only once on mount
-  useEffect(() => {
-    const checkWalletConnection = async () => {
-      // Prevent multiple simultaneous checks
-      if (isCheckingConnection.current || isInitialized.current) return;
+  // useEffect(() => {
+  //   const checkWalletConnection = async () => {
+  //     // Prevent multiple simultaneous checks
+  //     if (isCheckingConnection.current || isInitialized.current) return;
       
-      isCheckingConnection.current = true;
+  //     isCheckingConnection.current = true;
       
-      try {
-        const detectedProvider = await detectEthereumProvider();
+  //     try {
+  //       const detectedProvider = await detectEthereumProvider();
         
-        if (!detectedProvider) {
-          console.log('No ethereum provider detected');
-          return;
-        }
+  //       if (!detectedProvider) {
+  //         console.log('No ethereum provider detected');
+  //         return;
+  //       }
         
-        const accounts = await window.ethereum.request({ 
-          method: 'eth_accounts' 
-        });
+  //       const accounts = await window.ethereum.request({ 
+  //         method: 'eth_accounts' 
+  //       });
         
-        if (accounts && accounts.length > 0) {
-          console.log('Found existing connection:', accounts[0]);
+  //       if (accounts && accounts.length > 0) {
+  //         console.log('Found existing connection:', accounts[0]);
           
-          const ethersProvider = new ethers.providers.Web3Provider(detectedProvider);
-          const ethersSigner = ethersProvider.getSigner();
-          const network = await ethersProvider.getNetwork();
+  //         const ethersProvider = new ethers.providers.Web3Provider(detectedProvider);
+  //         const ethersSigner = ethersProvider.getSigner();
+  //         const network = await ethersProvider.getNetwork();
           
-          // Batch state updates
-          setProvider(ethersProvider);
-          setSigner(ethersSigner);
-          setAccount(accounts[0]);
-          setChainId(network.chainId.toString());
-          setIsConnected(true);
+  //         // Batch state updates
+  //         setProvider(ethersProvider);
+  //         setSigner(ethersSigner);
+  //         setAccount(accounts[0]);
+  //         setChainId(network.chainId.toString());
+  //         setIsConnected(true);
           
-          // Initialize contracts
-          initializeContracts(ethersSigner);
+  //         // Initialize contracts
+  //         initializeContracts(ethersSigner);
           
-          isInitialized.current = true;
-        }
-      } catch (error) {
-        console.error('Error checking wallet connection:', error);
-      } finally {
-        isCheckingConnection.current = false;
-      }
-    };
+  //         isInitialized.current = true;
+  //       }
+  //     } catch (error) {
+  //       console.error('Error checking wallet connection:', error);
+  //     } finally {
+  //       isCheckingConnection.current = false;
+  //     }
+  //   };
 
-    // Only run once on mount
-    checkWalletConnection();
-  }, []); // Empty dependency array - only run once
+  //   // Only run once on mount
+  //   checkWalletConnection();
+  // }, []); // Empty dependency array - only run once
 
   // Memoize context value to prevent unnecessary re-renders
   const contextValue = React.useMemo(() => ({

@@ -25,8 +25,6 @@ import {
   useDisclosure,
   FormControl,
   FormLabel,
-  Textarea,
-  Image,
   Card,
   CardBody,
   CardHeader,
@@ -46,14 +44,11 @@ import {
   AlertTitle,
   AlertDescription,
   useColorModeValue,
-  Spinner,
   Center,
   Skeleton,
-  SkeletonText,
   Flex,
   Spacer,
   Icon,
-  Progress,
   Stat,
   StatLabel,
   StatNumber,
@@ -64,32 +59,31 @@ import {
   InputLeftElement,
   Select
 } from '@chakra-ui/react';
+
 import { 
   FaCheck, 
   FaTimes, 
-  FaEye, 
-  FaUser, 
-  FaIdCard, 
-  FaShieldAlt, 
+  FaEye,   
   FaClock,
   FaBolt,
   FaSearch,
-  FaFilter,
   FaFileAlt,
   FaMapMarkerAlt,
-  FaSeedling,
-  FaMoneyBillWave,
   FaChartLine,
   FaExclamationTriangle,
   FaCheckCircle,
   FaTimesCircle,
   FaDownload,
-  FaRefresh
+  FaRedo
 } from 'react-icons/fa';
 import { useWeb3 } from '../contexts/Web3Context';
 import { useContracts } from '../hooks/useContracts';
 
 const AdminDashboard = () => {
+    // Color mode
+  const cardBg = useColorModeValue('white', 'gray.700');
+  const borderColor = useColorModeValue('gray.50', 'gray.700');
+  const bgColor = useColorModeValue('gray.50', 'gray.900');
   // State Management
   const [projects, setProjects] = useState([]);
   const [filteredProjects, setFilteredProjects] = useState([]);
@@ -112,10 +106,6 @@ const AdminDashboard = () => {
   const { getAllProjects, checkUserRoles } = useContracts();
   const toast = useToast();
 
-  // Color mode
-  const cardBg = useColorModeValue('white', 'gray.700');
-  const borderColor = useColorModeValue('gray.200', 'gray.600');
-  const bgColor = useColorModeValue('gray.50', 'gray.900');
 
   // Check admin permissions
   const [isAdmin, setIsAdmin] = useState(false);
@@ -505,7 +495,7 @@ const AdminDashboard = () => {
               </Card>
               
               <Button
-                leftIcon={<FaRefresh />}
+                leftIcon={< FaRedo />}
                 onClick={handleRefresh}
                 isLoading={refreshing}
                 variant="outline"
@@ -602,7 +592,7 @@ const AdminDashboard = () => {
             <CardBody p={0}>
               <Box overflowX="auto">
                 <Table variant="simple">
-                  <Thead bg={useColorModeValue('gray.50', 'gray.800')}>
+                  <Thead bg={bgColor}>
                     <Tr>
                       <Th>Project</Th>
                       <Th>Farmer</Th>
@@ -629,7 +619,7 @@ const AdminDashboard = () => {
                       </Tr>
                     ) : (
                       filteredProjects.map((project) => (
-                        <Tr key={project.id} _hover={{ bg: useColorModeValue('gray.50', 'gray.700') }}>
+                        <Tr key={project.id} _hover={{ bg: borderColor}}>
                           <Td>
                             <VStack align="start" spacing={1}>
                               <Text fontWeight="medium" noOfLines={1}>
@@ -1068,9 +1058,9 @@ const AdminDashboard = () => {
 
 // StatCard Component
 const StatCard = ({ title, value, icon: IconComponent, color, change }) => {
-  const cardBg = useColorModeValue('white', 'gray.700');
-  const borderColor = useColorModeValue('gray.200', 'gray.600');
-  
+const cardBg = useColorModeValue('white', 'gray.700');
+const borderColor = useColorModeValue('gray.50', 'gray.700');
+const bgColor = useColorModeValue('gray.50', 'gray.900');
   return (
     <Card bg={cardBg} borderWidth="1px" borderColor={borderColor}>
       <CardBody>
