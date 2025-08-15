@@ -41,6 +41,156 @@ import {
   FaCheckCircle
 } from 'react-icons/fa';
 
+const InvestmentTracker = ({ projectId }) => {
+  const [recentInvestments, setRecentInvestments] = useState([]);
+  const [totalFunded, setTotalFunded] = useState(0);
+  const [targetAmount] = useState(50000); // BDT
+
+  // Simulate real-time investments for demo
+  useEffect(() => {
+    const simulateInvestment = () => {
+      const investors = [
+        { name: "Ahmed Hassan", amount: 5000, avatar: "AH" },
+        { name: "Fatima Khan", amount: 10000, avatar: "FK" },
+        { name: "Rahim Uddin", amount: 7500, avatar: "RU" },
+        { name: "Nasir Ahmed", amount: 12000, avatar: "NA" }
+      ];
+
+      const randomInvestor = investors[Math.floor(Math.random() * investors.length)];
+      const newInvestment = {
+        id: Date.now(),
+        investor: randomInvestor.name,
+        avatar: randomInvestor.avatar,
+        amount: randomInvestor.amount,
+        timestamp: new Date(),
+        txHash: `0x${Math.random().toString(16).substr(2, 8)}...`
+      };
+
+      setRecentInvestments(prev => [newInvestment, ...prev.slice(0, 4)]);
+      setTotalFunded(prev => prev + randomInvestor.amount);
+    };
+
+    // Add initial investment after 2 seconds for demo effect
+    const timer = setTimeout(simulateInvestment, 2000);
+    
+    // Add more investments every 10 seconds during demo
+    const interval = setInterval(simulateInvestment, 10000);
+
+    return () => {
+      clearTimeout(timer);
+      clearInterval(interval);
+    };
+  }, []);
+
+  const fundingProgress = (totalFunded / targetAmount) * 100;
+
+  return (
+    <VStack spacing={4} align="stretch">
+      {/* Funding Progress */}
+      <Card>
+        <CardBody>
+          <VStack spacing={3} align="stretch">
+            <HStack justify="space-between">
+              <Text fontWeight="bold">Funding Progress</Text>
+              <Text color="green.500" fontWeight="bold">
+                {Math.round(fundingProgress)}%
+              </Text>
+            </HStack>
+            <Progress 
+              value={fundingProgress} 
+              colorScheme="green" 
+              size="lg" 
+              borderRadius="md"
+            />
+            <HStack justify="space-between">
+              <Text fontSize="sm" color="gray.500">
+                {totalFunded.toLocaleString()} BDT raised
+              </Text>
+              <Text fontSize="sm" color="gray.500">
+                Goal: {targetAmount.toLocaleString()} BDT
+              </Text>
+            </HStack>
+          </VStack>
+        </CardBody>
+      </Card>
+
+      {/* Recent Investments */}
+      <Card>
+        <CardBody>
+          <VStack spacing={3} align="stretch">
+            <Text fontWeight="bold">Recent Investments</Text>
+            {recentInvestments.length === 0 ? (
+              <Text color="gray.500" fontSize="sm">
+                Waiting for investments...
+              </Text>
+            ) : (
+              recentInvestments.map((investment) => (
+                <HStack 
+                  key={investment.id} 
+                  justify="space-between" 
+                  p={3} 
+                  bg="green.50" 
+                  borderRadius="md"
+                  border="1px solid"
+                  borderColor="green.200"
+                >
+                  <HStack>
+                    <Avatar size="sm" name={investment.investor} />
+                    <VStack align="start" spacing={0}>
+                      <Text fontWeight="medium" fontSize="sm">
+                        {investment.investor}
+                      </Text>
+                      <Text fontSize="xs" color="gray.500">
+                        {investment.timestamp.toLocaleTimeString()}
+                      </Text>
+                    </VStack>
+                  </HStack>
+                  <VStack align="end" spacing={0}>
+                    <Text fontWeight="bold" color="green.600">
+                      +{investment.amount.toLocaleString()} BDT
+                    </Text>
+                    <Text fontSize="xs" color="gray.500" fontFamily="mono">
+                      {investment.txHash}
+                    </Text>
+                  </VStack>
+                </HStack>
+              ))
+            )}
+          </VStack>
+        </CardBody>
+      </Card>
+
+      {/* Investment Milestones */}
+      <Card>
+        <CardBody>
+          <VStack spacing={3} align="stretch">
+            <Text fontWeight="bold">Funding Milestones</Text>
+            {[
+              { target: 25, label: "Project Launch", achieved: totalFunded >= targetAmount * 0.25 },
+              { target: 50, label: "Equipment Purchase", achieved: totalFunded >= targetAmount * 0.50 },
+              { target: 75, label: "Land Preparation", achieved: totalFunded >= targetAmount * 0.75 },
+              { target: 100, label: "Full Funding", achieved: totalFunded >= targetAmount }
+            ].map((milestone) => (
+              <HStack key={milestone.target} justify="space-between">
+                <Text fontSize="sm">
+                  {milestone.label} ({milestone.target}%)
+                </Text>
+                <Badge 
+                  colorScheme={milestone.achieved ? "green" : "gray"}
+                  variant={milestone.achieved ? "solid" : "outline"}
+                >
+                  {milestone.achieved ? "✓ Achieved" : "Pending"}
+                </Badge>
+              </HStack>
+            ))}
+          </VStack>
+        </CardBody>
+      </Card>
+    </VStack>
+  );
+};
+
+
 const ProjectDetail = () => {
   const { id } = useParams();
   const [tabIndex, setTabIndex] = useState(0);
