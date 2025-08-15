@@ -219,8 +219,8 @@ contract InvestmentManager is AccessControl, ReentrancyGuard {
     }
     
     /**
-     * @dev Investor claims their yield from completed projects
-     */
+    * @dev Investor claims their yield from completed projects
+    */
     function claimYield() external nonReentrant {
         uint256 pendingAmount = pendingYields[msg.sender];
         require(pendingAmount > 0, "No yield to claim");
@@ -232,75 +232,22 @@ contract InvestmentManager is AccessControl, ReentrancyGuard {
         require(success, "Yield transfer failed");
         
         emit YieldClaimed(msg.sender, pendingAmount);
-    }
-    
+    }        
     /**
-     * @dev Calculate expected return for an investment
-     * @param amountUSDC Investment amount in USDC
-     * @param durationDays Duration in days
-     * @return Expected return in USDC
-     */
+    * @dev Calculate expected return for an investment
+    * @param amountUSDC Investment amount in USDC
+    * @param durationDays Duration in days
+    * @return Expected return in USDC
+    */
     function calculateExpectedReturn(uint256 amountUSDC, uint256 durationDays) public pure returns (uint256) {
         // 12% annual return = 12% / 365 days
         // Return = principal * rate * time
         return (amountUSDC * ANNUAL_YIELD_RATE * durationDays) / (365 * 10000);
     }
-    
-    /**
-     * @dev Get total repayment required for a project
-     * @param projectId Project ID
-     * @return Total amount farmer needs to repay (principal + 12% yield)
-     */
-    function getRequiredRepayment(uint256 projectId) external view returns (uint256) {
-        ProjectLoan memory loan = projectLoans[projectId];
-        if (loan.principalAmount == 0) return 0;
         
-        ProjectFactory.Project memory project = projectFactory.getProject(projectId);
-        uint256 projectDuration = _getActualProjectDuration(project);
-        uint256 totalYield = calculateExpectedReturn(loan.principalAmount, projectDuration);
-        
-        return loan.principalAmount + totalYield;
-    }
     
-    /**
-     * @dev Get yield information for a project
-     * @param projectId Project ID
-     * @return Comprehensive loan and yield information
-     */
-    function getProjectYieldInfo(uint256 projectId) external view returns (
-        bool isCompleted,
-        uint256 principalAmount,
-        uint256 yieldAmount,
-        uint256 totalRepayment,
-        bool isFullyRepaid,
-        uint256 repaymentDeadline,
-        address farmer
-    ) {
-        ProjectLoan memory loan = projectLoans[projectId];
-        isCompleted = projectCompleted[projectId];
-        principalAmount = loan.principalAmount;
-        yieldAmount = loan.yieldAmount;
-        totalRepayment = loan.totalRepayment;
-        isFullyRepaid = loan.isFullyRepaid;
-        repaymentDeadline = loan.repaymentDeadline;
-        farmer = loan.farmer;
-    }
     
-    /**
-     * @dev Check if investor can claim yield and how much
-     * @param investor Investor address
-     * @return claimableAmount Amount available to claim
-     */
-    function getClaimableYield(address investor) external view returns (uint256 claimableAmount) {
-        return pendingYields[investor];
-    }
     
-    /**
-     * @dev Get detailed investment information for an investor in a project
-     * @param investor Investor address
-     * @param projectId Project ID
-     * @return Investment details including yield status
-     */
     function getInvestorProjectDetails(address investor, uint256 projectId) 
         external view returns (
             uint256 amountUSDC, 
@@ -324,6 +271,56 @@ contract InvestmentManager is AccessControl, ReentrancyGuard {
                 yieldClaimed = investments[i].claimed;
             }
         }
+    }
+
+
+    /**
+    * @dev Get total repayment required for a project
+    * @param projectId Project ID
+    * @return Total amount farmer needs to repay (principal + 12% yield)
+    */
+    function getRequiredRepayment(uint256 projectId) external view returns (uint256) {
+        ProjectLoan memory loan = projectLoans[projectId];
+        if (loan.principalAmount == 0) return 0;
+        
+        ProjectFactory.Project memory project = projectFactory.getProject(projectId);
+        uint256 projectDuration = _getActualProjectDuration(project);
+        uint256 totalYield = calculateExpectedReturn(loan.principalAmount, projectDuration);
+        
+        return loan.principalAmount + totalYield;
+    }
+
+    /**
+    * @dev Get yield information for a project
+    * @param projectId Project ID
+    * @return Comprehensive loan and yield information
+    */
+    function getProjectYieldInfo(uint256 projectId) external view returns (
+        bool isCompleted,
+        uint256 principalAmount,
+        uint256 yieldAmount,
+        uint256 totalRepayment,
+        bool isFullyRepaid,
+        uint256 repaymentDeadline,
+        address farmer
+    ) {
+        ProjectLoan memory loan = projectLoans[projectId];
+        isCompleted = projectCompleted[projectId];
+        principalAmount = loan.principalAmount;
+        yieldAmount = loan.yieldAmount;
+        totalRepayment = loan.totalRepayment;
+        isFullyRepaid = loan.isFullyRepaid;
+        repaymentDeadline = loan.repaymentDeadline;
+        farmer = loan.farmer;
+    }
+
+    /**
+    * @dev Check if investor can claim yield and how much
+    * @param investor Investor address
+    * @return claimableAmount Amount available to claim
+    */
+    function getClaimableYield(address investor) external view returns (uint256 claimableAmount) {
+        return pendingYields[investor];
     }
     
     /**

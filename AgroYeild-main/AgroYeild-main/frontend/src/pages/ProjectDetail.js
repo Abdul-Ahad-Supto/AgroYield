@@ -513,7 +513,7 @@ const ProjectDetail = () => {
                         {project.details.timeline.map((item, index) => (
                           <ListItem key={index} display="flex" alignItems="flex-start">
                             <ListIcon as={FaCheckCircle} color="brand.500" mt={1} />
-                            {risk}
+                            {item.description}
                           </ListItem>
                         ))}
                       </List>
