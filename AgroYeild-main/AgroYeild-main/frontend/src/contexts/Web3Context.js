@@ -2,6 +2,7 @@ import React, { createContext, useContext, useEffect, useState, useCallback, use
 import { ethers } from 'ethers';
 import detectEthereumProvider from '@metamask/detect-provider';
 import { useToast } from '@chakra-ui/react';
+import contractAddresses from '../contracts/amoy-addresses.json';
 
 // Import contract ABIs and addresses
 import ProjectFactoryABI from '../contracts/ProjectFactory.json';
@@ -11,14 +12,14 @@ import OracleIntegrationABI from '../contracts/OracleIntegration.json';
 import YieldDistributorABI from '../contracts/YieldDistributor.json';
 import GovernanceModuleABI from '../contracts/GovernanceModule.json';
 
-// Contract addresses (replace with actual deployed addresses)
+// Import the deployed addresses
 const CONTRACT_ADDRESSES = {
-  projectFactory: '',
-  investmentManager: '',
-  identityRegistry: '',
-  oracleIntegration: '',
-  yieldDistributor: '',
-  governanceModule: ''
+  projectFactory: contractAddresses.projectFactory,
+  investmentManager: contractAddresses.investmentManager,
+  identityRegistry: contractAddresses.identityRegistry,
+  oracleIntegration: contractAddresses.oracleIntegration,
+  yieldDistributor: contractAddresses.yieldDistributor,
+  governanceModule: contractAddresses.governanceModule
 };
 
 const Web3Context = createContext();

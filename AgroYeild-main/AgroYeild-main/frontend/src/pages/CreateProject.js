@@ -22,13 +22,11 @@ import {
   useToast,
   useColorModeValue,
   FormHelperText,
-  FormErrorMessage,
   Card,
   CardBody,
   CardHeader,
   Divider,
   Icon,
-  useSteps,
   Step,
   StepIndicator,
   StepStatus,
@@ -38,11 +36,11 @@ import {
   StepDescription,
   StepSeparator,
   Stepper,
-  BoxProps,
   Flex,
-  Badge
 } from '@chakra-ui/react';
 import { FaUpload, FaCheck, FaArrowRight, FaArrowLeft } from 'react-icons/fa';
+import { useContracts } from './hooks/useContracts';
+import { useWallet } from './hooks/useWallet';
 
 const steps = [
   { title: 'Basic Info', description: 'Project details' },
@@ -70,6 +68,8 @@ function StepCircle({ isCompleted, isActive, stepIndex, ...props }) {
 }
 
 const CreateProject = () => {
+  const { isConnected } = useWallet();
+  const { createProject, loading } = useContracts();
   const [currentStep, setCurrentStep] = useState(0);
   const [formData, setFormData] = useState({
     // Step 1: Basic Info
@@ -123,7 +123,6 @@ const CreateProject = () => {
   const handleFileUpload = (e) => {
     const file = e.target.files[0];
     if (file) {
-      // In a real app, you would upload this to IPFS
       setFormData({
         ...formData,
         image: URL.createObjectURL(file),
@@ -131,36 +130,58 @@ const CreateProject = () => {
     }
   };
   
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    // In a real app, this would interact with your smart contract
-    console.log('Form submitted:', formData);
     
-    toast({
-      title: 'Project Created!',
-      description: 'Your project has been submitted for verification.',
-      status: 'success',
-      duration: 5000,
-      isClosable: true,
-    });
-    
-    // Reset form
-    setFormData({
-      title: '',
-      category: '',
-      location: '',
-      description: '',
-      image: null,
-      targetAmount: '',
-      fundingDeadline: '',
-      milestones: formData.milestones.map(m => ({ ...m, description: '', deadline: '' })),
-      risks: '',
-      rewards: '',
-    });
-    
-    setCurrentStep(0);
+    if (!isConnected) {
+      toast({
+        title: 'Wallet Not Connected',
+        description: 'Please connect your wallet to create a project.',
+        status: 'error',
+        duration: 5000,
+        isClosable: true,
+      });
+      return;
+    }
+
+    try {
+      const result = await createProject({
+        title: formData.title,
+        description: formData.description,
+        targetAmount: formData.targetAmount,
+        location: formData.location,
+        category: formData.category,
+        duration: 90
+      });
+
+      console.log('Project created:', result);
+      
+      // Reset form after successful creation
+      setFormData({
+        title: '',
+        category: '',
+        location: '',
+        description: '',
+        image: null,
+        targetAmount: '',
+        fundingDeadline: '',
+        milestones: [
+          { name: 'Initial Setup', description: '', deadline: '' },
+          { name: 'Planting', description: '', deadline: '' },
+          { name: 'Growth', description: '', deadline: '' },
+          { name: 'Harvest', description: '', deadline: '' },
+        ],
+        risks: '',
+        rewards: '',
+      });
+      
+      setCurrentStep(0);
+
+    } catch (error) {
+      console.error('Project creation failed:', error);
+    }
   };
-  
+
   const nextStep = () => {
     if (currentStep < steps.length - 1) {
       setCurrentStep(currentStep + 1);
@@ -513,6 +534,8 @@ const CreateProject = () => {
                     colorScheme="green"
                     rightIcon={<FaCheck />}
                     ml="auto"
+                    isLoading={loading}
+                    loadingText="Creating Project..."
                   >
                     Submit Project
                   </Button>
