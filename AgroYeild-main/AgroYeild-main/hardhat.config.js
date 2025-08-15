@@ -3,30 +3,24 @@ require("dotenv").config();
 require("hardhat-gas-reporter");
 require("solidity-coverage");
 
-const { PRIVATE_KEY, POLYGONSCAN_API_KEY } = process.env;
+const { PRIVATE_KEY, POLYGONSCAN_API_KEY, AMOY_RPC_URL } = process.env;
 
-/** @type import('hardhat/config').HardhatUserConfig */
 module.exports = {
   solidity: {
     version: "0.8.20",
     settings: {
-      optimizer: {
-        enabled: true,
-        runs: 200,
-      },
+      optimizer: { enabled: true, runs: 200 },
     },
   },
   networks: {
-    mumbai: {
-      url: process.env.MUMBAI_RPC_URL || "https://rpc-mumbai.maticvigil.com",
-      chainId: 80001,
+    amoy: {
+      url: AMOY_RPC_URL || "https://polygon-amoy.polygon.technology",
+      chainId: 80002,
       accounts: PRIVATE_KEY ? [PRIVATE_KEY] : [],
     },
   },
   etherscan: {
-    apiKey: {
-      polygonMumbai: POLYGONSCAN_API_KEY || "",
-    },
+    apiKey: { polygonAmoy: POLYGONSCAN_API_KEY || "" },
   },
   gasReporter: {
     enabled: process.env.REPORT_GAS === "true",

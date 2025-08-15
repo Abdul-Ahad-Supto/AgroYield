@@ -1,0 +1,45 @@
+{
+  "network": "amoy",
+  "chainId": 80002,
+  "timestamp": "2025-08-15T13:12:23.529Z",
+  "deployer": "0x456a150ce19FE081158B2DDd68438bFAf967D73b",
+  "usdcAddress": "0x41E94Eb019C0762f9Bfcf9Fb1E58725BfB0e7582",
+  "conversionRate": "1 BDT = 125 USDC (scaled)",
+  "contracts": {
+    "projectFactory": "0xb9D40884803ce308286c2c744B7E31B940CAEAf8",
+    "identityRegistry": "0xbe2DA41e9d9ac9753EaFA6EB33Be098dac9A6a13",
+    "investmentManager": "0x9A126Eb32859593F9442C125EEe8c8E74d0ad938",
+    "oracleIntegration": "0xE8964414429f3061F9C36ddd10B24066bd986318",
+    "yieldDistributor": "0x805f45E36cc5C1bfdA492C8B1D73Fde1905144fD",
+    "governanceModule": "0xE1E26109E407f7745E0de3D0a811b7135706B1f9"
+  },
+  "demoProjects": [
+    {
+      "id": 1,
+      "title": "Organic Rice Farming - Rangpur",
+      "targetBDT": "100,000 BDT",
+      "targetUSDC": "800 USDC",
+      "category": "Rice Cultivation"
+    },
+    {
+      "id": 2,
+      "title": "Mango Orchard with Drip Irrigation",
+      "targetBDT": "75,000 BDT",
+      "targetUSDC": "600 USDC",
+      "category": "Fruit Cultivation"
+    },
+    {
+      "id": 3,
+      "title": "Smart Vegetable Greenhouse",
+      "targetBDT": "50,000 BDT",
+      "targetUSDC": "400 USDC",
+      "category": "Vegetable Cultivation"
+    }
+  ],
+  "amoyConfig": {
+    "rpcUrl": "https://rpc-amoy.polygon.technology",
+    "explorerUrl": "https://amoy.polygonscan.com",
+    "faucetUrl": "https://faucet.polygon.technology/",
+    "usdcAddress": "0x41E94Eb019C0762f9Bfcf9Fb1E58725BfB0e7582"
+  }
+}
