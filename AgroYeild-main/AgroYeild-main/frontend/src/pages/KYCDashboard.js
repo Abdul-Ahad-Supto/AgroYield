@@ -25,7 +25,6 @@ import {
   useDisclosure,
   FormControl,
   FormLabel,
-  Input,
   Select,
   Textarea,
   Image,
@@ -41,16 +40,38 @@ import {
   TabPanels,
   Avatar,
   IconButton,
-  Tooltip
+  Tooltip,
+  Switch,
+  Alert,
+  AlertIcon,
+  AlertTitle,
+  AlertDescription
 } from '@chakra-ui/react';
-import { FaCheck, FaTimes, FaEye, FaUser, FaIdCard, FaShieldAlt } from 'react-icons/fa';
+import { 
+  FaCheck, 
+  FaTimes, 
+  FaEye, 
+  FaUser, 
+  FaIdCard, 
+  FaShieldAlt, 
+  FaClock,
+  FaBolt 
+} from 'react-icons/fa';
 import { useWeb3 } from '../contexts/Web3Context';
+
+// Demo mode configuration
+const DEMO_CONFIG = {
+  isDemoMode: process.env.REACT_APP_DEMO_MODE === 'true' || process.env.NODE_ENV === 'development',
+  quickActions: true,
+  skipComplexForms: true
+};
 
 const KYCDashboard = () => {
   const { contracts, account, isConnected } = useWeb3();
   const [kycRequests, setKycRequests] = useState([]);
   const [selectedRequest, setSelectedRequest] = useState(null);
   const [isProcessing, setIsProcessing] = useState(false);
+  const [demoMode, setDemoMode] = useState(DEMO_CONFIG.isDemoMode);
   const { isOpen, onOpen, onClose } = useDisclosure();
   const toast = useToast();
 
@@ -60,9 +81,11 @@ const KYCDashboard = () => {
       id: 1,
       address: '0x1234...5678',
       name: 'Karim Ahmed',
+      nameEn: 'Karim Ahmed',
       role: 'Farmer',
       documentType: 'NID',
       documentNumber: '1990123456789',
+      nidNumber: '1990123456789',
       location: 'Rangpur, Bangladesh',
       submittedAt: '2025-01-10 14:30',
       status: 'Pending',
@@ -82,9 +105,11 @@ const KYCDashboard = () => {
       id: 2,
       address: '0x8765...4321',
       name: 'Fatima Begum',
+      nameEn: 'Fatima Begum',
       role: 'Investor',
       documentType: 'Passport',
       documentNumber: 'BD1234567',
+      nidNumber: 'BD1234567',
       location: 'Dhaka, Bangladesh',
       submittedAt: '2025-01-10 15:45',
       status: 'Pending',
@@ -108,7 +133,7 @@ const KYCDashboard = () => {
   const handleApproveKYC = async (request) => {
     setIsProcessing(true);
     try {
-      if (contracts.identityRegistry) {
+      if (contracts?.identityRegistry && isConnected) {
         // Issue verifiable credential
         const tx = await contracts.identityRegistry.issueCredential(
           request.address,
@@ -146,7 +171,7 @@ const KYCDashboard = () => {
       console.error('KYC approval error:', error);
       toast({
         title: 'Approval Failed',
-        description: error.message,
+        description: error.message || 'Failed to approve KYC',
         status: 'error',
         duration: 5000,
         isClosable: true,
@@ -156,7 +181,20 @@ const KYCDashboard = () => {
     }
   };
 
-  const handleRejectKYC = async (request, reason) => {
+  const handleQuickDemo = async (request) => {
+    if (demoMode) {
+      // Lightning fast demo approval
+      await handleApproveKYC(request);
+      toast({
+        title: '⚡ Demo: KYC Instantly Approved!',
+        description: `${request.nameEn || request.name} granted ${request.role} role`,
+        status: 'success',
+        duration: 2000,
+      });
+    }
+  };
+
+  const handleRejectKYC = async (request, reason = 'Documents not clear') => {
     setIsProcessing(true);
     try {
       // Update status
@@ -197,6 +235,25 @@ const KYCDashboard = () => {
 
   return (
     <Container maxW="7xl" py={8}>
+      {/* Demo Mode Toggle (hide in production) */}
+      {process.env.NODE_ENV === 'development' && (
+        <Box mb={4} p={3} bg="yellow.100" borderRadius="md">
+          <HStack justify="space-between">
+            <Text fontWeight="bold">🎭 Olympiad Demo Mode</Text>
+            <Switch 
+              isChecked={demoMode} 
+              onChange={(e) => setDemoMode(e.target.checked)}
+              colorScheme="orange"
+            />
+          </HStack>
+          {demoMode && (
+            <Text fontSize="sm" color="orange.700" mt={1}>
+              Quick actions enabled for smooth demo presentation
+            </Text>
+          )}
+        </Box>
+      )}
+
       <VStack spacing={8} align="stretch">
         {/* Header */}
         <Box>
@@ -275,10 +332,17 @@ const KYCDashboard = () => {
           </Card>
         </SimpleGrid>
 
-        {/* KYC Requests Table */}
+        {/* Enhanced table with demo shortcuts */}
         <Card>
           <CardHeader>
-            <Heading size="md">KYC Verification Requests</Heading>
+            <HStack justify="space-between">
+              <Heading size="md">KYC Verification Requests</Heading>
+              {demoMode && (
+                <Badge colorScheme="orange" px={3} py={1}>
+                  🎭 Demo Mode: Quick Actions Enabled
+                </Badge>
+              )}
+            </HStack>
           </CardHeader>
           <Divider />
           <CardBody p={0}>
@@ -299,7 +363,7 @@ const KYCDashboard = () => {
                   <Tr key={request.id}>
                     <Td>
                       <HStack>
-                        <Avatar size="sm" name={request.name} />
+                        <Avatar size="sm" name={request.nameEn || request.name} />
                         <Box>
                           <Text fontWeight="medium">{request.name}</Text>
                           <Text fontSize="xs" color="gray.500">{request.address}</Text>
@@ -320,7 +384,8 @@ const KYCDashboard = () => {
                     <Td>{getStatusBadge(request.status)}</Td>
                     <Td>
                       <HStack spacing={2}>
-                        <Tooltip label="View Details">
+                        {/* Production action: Full review */}
+                        <Tooltip label="Full Review">
                           <IconButton
                             icon={<FaEye />}
                             size="sm"
@@ -328,9 +393,26 @@ const KYCDashboard = () => {
                             onClick={() => viewDetails(request)}
                           />
                         </Tooltip>
-                        {request.status === 'Pending' && (
+                        
+                        {/* Demo action: Lightning fast */}
+                        {demoMode && request.status === 'Pending' && (
+                          <Tooltip label="⚡ Demo: Instant Approve">
+                            <Button
+                              size="sm"
+                              colorScheme="orange"
+                              leftIcon={<FaBolt />}
+                              onClick={() => handleQuickDemo(request)}
+                              isLoading={isProcessing}
+                            >
+                              Quick Demo
+                            </Button>
+                          </Tooltip>
+                        )}
+                        
+                        {/* Production actions */}
+                        {!demoMode && request.status === 'Pending' && (
                           <>
-                            <Tooltip label="Quick Approve">
+                            <Tooltip label="Approve">
                               <IconButton
                                 icon={<FaCheck />}
                                 size="sm"
@@ -360,11 +442,16 @@ const KYCDashboard = () => {
         </Card>
       </VStack>
 
-      {/* Detail Modal */}
+      {/* Keep your full production modal with all tabs */}
       <Modal isOpen={isOpen} onClose={onClose} size="4xl">
         <ModalOverlay />
         <ModalContent>
-          <ModalHeader>KYC Verification Details</ModalHeader>
+          <ModalHeader>
+            KYC Verification Details
+            {demoMode && (
+              <Badge ml={2} colorScheme="orange">Demo Mode</Badge>
+            )}
+          </ModalHeader>
           <ModalCloseButton />
           <ModalBody>
             {selectedRequest && (
@@ -373,9 +460,11 @@ const KYCDashboard = () => {
                   <Tab>Personal Info</Tab>
                   <Tab>Documents</Tab>
                   <Tab>Verification</Tab>
+                  {demoMode && <Tab>🎭 Quick Demo</Tab>}
                 </TabList>
 
                 <TabPanels>
+                  {/* Personal Info Tab */}
                   <TabPanel>
                     <SimpleGrid columns={2} spacing={4}>
                       <Box>
@@ -398,38 +487,39 @@ const KYCDashboard = () => {
                       </Box>
                       <Box>
                         <Text fontWeight="bold" mb={1}>Email</Text>
-                        <Text>{selectedRequest.details.email}</Text>
+                        <Text>{selectedRequest.details?.email}</Text>
                       </Box>
                       <Box>
                         <Text fontWeight="bold" mb={1}>Phone</Text>
-                        <Text>{selectedRequest.details.phone}</Text>
+                        <Text>{selectedRequest.details?.phone}</Text>
                       </Box>
                       {selectedRequest.role === 'Farmer' && (
                         <>
                           <Box>
                             <Text fontWeight="bold" mb={1}>Farm Size</Text>
-                            <Text>{selectedRequest.details.farmSize}</Text>
+                            <Text>{selectedRequest.details?.farmSize}</Text>
                           </Box>
                           <Box>
                             <Text fontWeight="bold" mb={1}>Experience</Text>
-                            <Text>{selectedRequest.details.experience}</Text>
+                            <Text>{selectedRequest.details?.experience}</Text>
                           </Box>
                         </>
                       )}
                       {selectedRequest.role === 'Investor' && (
                         <Box>
                           <Text fontWeight="bold" mb={1}>Investment Capacity</Text>
-                          <Text>{selectedRequest.details.investmentCapacity}</Text>
+                          <Text>{selectedRequest.details?.investmentCapacity}</Text>
                         </Box>
                       )}
                     </SimpleGrid>
                   </TabPanel>
 
+                  {/* Documents Tab */}
                   <TabPanel>
                     <VStack spacing={4} align="stretch">
                       <Text fontWeight="bold">Submitted Documents</Text>
                       <SimpleGrid columns={2} spacing={4}>
-                        {Object.entries(selectedRequest.documents).map(([key, url]) => (
+                        {Object.entries(selectedRequest.documents || {}).map(([key, url]) => (
                           <Box key={key}>
                             <Text fontSize="sm" mb={2} textTransform="capitalize">
                               {key.replace(/([A-Z])/g, ' $1').trim()}
@@ -449,6 +539,7 @@ const KYCDashboard = () => {
                     </VStack>
                   </TabPanel>
 
+                  {/* Verification Tab */}
                   <TabPanel>
                     <VStack spacing={4} align="stretch">
                       <FormControl>
@@ -492,6 +583,50 @@ const KYCDashboard = () => {
                       )}
                     </VStack>
                   </TabPanel>
+                  
+                  {/* Demo-specific tab */}
+                  {demoMode && (
+                    <TabPanel>
+                      <VStack spacing={4}>
+                        <Alert status="info">
+                          <AlertIcon />
+                          <Box>
+                            <AlertTitle>Olympiad Demo Mode</AlertTitle>
+                            <AlertDescription>
+                              Simplified actions for presentation purposes
+                            </AlertDescription>
+                          </Box>
+                        </Alert>
+                        
+                        <SimpleGrid columns={2} spacing={4} w="full">
+                          <Button 
+                            size="lg" 
+                            colorScheme="green"
+                            leftIcon={<FaCheck />}
+                            onClick={() => {
+                              handleApproveKYC(selectedRequest);
+                              onClose();
+                            }}
+                            isLoading={isProcessing}
+                          >
+                            ⚡ Instant Approve
+                          </Button>
+                          <Button 
+                            size="lg" 
+                            colorScheme="red"
+                            leftIcon={<FaTimes />}
+                            onClick={() => {
+                              handleRejectKYC(selectedRequest, 'Demo rejection');
+                              onClose();
+                            }}
+                            isLoading={isProcessing}
+                          >
+                            ⚡ Quick Reject
+                          </Button>
+                        </SimpleGrid>
+                      </VStack>
+                    </TabPanel>
+                  )}
                 </TabPanels>
               </Tabs>
             )}
