@@ -9,8 +9,7 @@ Start it again - this will clear the in-memory database
 Then follow these steps:
 
 Connect the admin wallet address: 0x456a150ce19FE081158B2DDd68438bFAf967D73b
-Register a new account with:
+login details
 Email: admin@agroyield.com
-Password: (any password you want)
-Role: Choose any role for now (since admin role is assigned based on email)
-The system will recognize admin@agroyield.com as an admin email and grant admin privileges automatically.
+Password: 12345678
+Role: admin

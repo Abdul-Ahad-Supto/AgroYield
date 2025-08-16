@@ -74,6 +74,33 @@ let users = [];
 let kycRequests = [];
 let projectSubmissions = [];
 
+// Initialize admin user
+(async () => {
+  const adminPassword = '12345678';
+  const hashedPassword = await bcrypt.hash(adminPassword, 10);
+  
+  const adminUser = {
+    walletAddress: '0x456a150ce19fe081158b2ddd68438bfaf967d73b',
+    email: 'admin@agroyield.com',
+    password: hashedPassword,
+    role: 'admin',
+    roles: ['admin'],
+    isKYCVerified: true,
+    profile: {
+      name: 'Admin',
+      role: 'admin'
+    },
+    createdAt: new Date(),
+    updatedAt: new Date()
+  };
+  
+  // Only add admin if not already present
+  if (!users.find(user => user.email === adminUser.email)) {
+    users.push(adminUser);
+    console.log('Admin user initialized');
+  }
+})();
+
 // Blockchain service functions
 class BlockchainService {
   static async getProjectFromBlockchain(projectId) {
