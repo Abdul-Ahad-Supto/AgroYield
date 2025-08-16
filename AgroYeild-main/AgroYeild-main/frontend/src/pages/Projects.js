@@ -52,7 +52,7 @@ import {
   FaExclamationTriangle,
   FaEye
 } from 'react-icons/fa';
-import { useWeb3 } from '../contexts/Web3Context';
+import { useAuth } from '../contexts/AuthContext'; // Changed from useWeb3
 import { useContracts } from '../hooks/useContracts';
 
 const Projects = () => {
@@ -67,7 +67,8 @@ const Projects = () => {
   const [loadingFunding, setLoadingFunding] = useState({});
   const [error, setError] = useState(null);
   
-  const { isConnected } = useWeb3();
+  // Changed to use AuthContext instead of Web3Context
+  const { isAuthenticated, isConnected } = useAuth();
   const { getAllProjects, getProjectFunding, convertUSDCToBDT } = useContracts();
   const toast = useToast();
   
@@ -129,8 +130,13 @@ const Projects = () => {
       }
     };
 
-    fetchProjects();
-  }, [getAllProjects, toast]);
+    // Check if user is authenticated instead of wallet connected
+    if (isAuthenticated) {
+      fetchProjects();
+    } else {
+      setLoading(false);
+    }
+  }, [getAllProjects, toast, isAuthenticated]); // Changed dependency
 
   // Fetch funding data for individual project
   const fetchProjectFunding = async (projectId) => {
@@ -460,16 +466,25 @@ const Projects = () => {
     );
   };
 
-  // If not connected to wallet
-  if (!isConnected) {
+  // If not authenticated, show login prompt
+  if (!isAuthenticated) {
     return (
       <Container maxW="7xl" py={8}>
         <Center py={20}>
           <Alert status="warning" borderRadius="lg" maxW="md">
             <AlertIcon />
             <Box>
-              <Text fontWeight="bold">Wallet Not Connected</Text>
-              <Text fontSize="sm">Please connect your wallet to view projects.</Text>
+              <Text fontWeight="bold">Please Sign In</Text>
+              <Text fontSize="sm">Please sign in to view projects.</Text>
+              <Button
+                as={RouterLink}
+                to="/auth"
+                colorScheme="brand"
+                size="sm"
+                mt={3}
+              >
+                Sign In
+              </Button>
             </Box>
           </Alert>
         </Center>

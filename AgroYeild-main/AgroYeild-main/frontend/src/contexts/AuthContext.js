@@ -118,6 +118,9 @@ export const AuthProvider = ({ children }) => {
       
       setUser(userData);
       setIsAuthenticated(true);
+      // Set wallet connection state based on user data
+      setWalletAddress(userData.walletAddress);
+      setIsConnected(true);
 
       toast({
         title: 'Registration Successful',
@@ -180,6 +183,9 @@ export const AuthProvider = ({ children }) => {
       
       setUser(userData);
       setIsAuthenticated(true);
+      // Set wallet connection state based on user data
+      setWalletAddress(userData.walletAddress);
+      setIsConnected(true);
 
       toast({
         title: 'Login Successful',
@@ -208,7 +214,8 @@ export const AuthProvider = ({ children }) => {
     localStorage.removeItem('authToken');
     setUser(null);
     setIsAuthenticated(false);
-    disconnectWallet();
+    setWalletAddress('');
+    setIsConnected(false);
     
     toast({
       title: 'Logged Out',
@@ -217,7 +224,7 @@ export const AuthProvider = ({ children }) => {
       duration: 3000,
       isClosable: true,
     });
-  }, [disconnectWallet, toast]);
+  }, [toast]);
 
   // Check authentication status
   const checkAuth = useCallback(async () => {
@@ -533,12 +540,17 @@ export const AuthProvider = ({ children }) => {
     if (window.ethereum) {
       const handleAccountsChanged = (accounts) => {
         if (accounts.length === 0) {
-          disconnectWallet();
+          // Only disconnect if user is not authenticated via our system
+          if (!isAuthenticated) {
+            disconnectWallet();
+          }
         } else if (accounts[0] !== walletAddress) {
-          setWalletAddress(accounts[0]);
-          // If user is authenticated but wallet changed, logout
+          // If authenticated user but wallet changed, just update the address
           if (isAuthenticated) {
-            logout();
+            setWalletAddress(accounts[0]);
+          } else {
+            setWalletAddress(accounts[0]);
+            setIsConnected(true);
           }
         }
       };
@@ -549,7 +561,15 @@ export const AuthProvider = ({ children }) => {
         window.ethereum.removeListener('accountsChanged', handleAccountsChanged);
       };
     }
-  }, [walletAddress, isAuthenticated, disconnectWallet, logout]);
+  }, [walletAddress, isAuthenticated, disconnectWallet]);
+
+  // Check if user is admin
+  const isAdmin = () => {
+    if (!user) return false;
+    return user.email === 'admin@agroyield.com' || 
+           user.email === 'validator@agroyield.com' ||
+           (user.roles && user.roles.includes('admin'));
+  };
 
   const contextValue = {
     // State
@@ -579,7 +599,8 @@ export const AuthProvider = ({ children }) => {
     getUserInvestments,
     
     // Utility
-    apiCall
+    apiCall,
+    isAdmin
   };
 
   return (
