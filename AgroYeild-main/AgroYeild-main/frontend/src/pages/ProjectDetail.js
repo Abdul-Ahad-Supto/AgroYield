@@ -65,7 +65,7 @@ import {
   FaUser,
   FaCheckCircle
 } from 'react-icons/fa';
-import { useWeb3 } from '../contexts/Web3Context.Backup';
+import { useWeb3 } from '../contexts/Web3Context';
 import { useContracts } from '../hooks/useContracts';
 
 const InvestmentTracker = ({ projectId }) => {

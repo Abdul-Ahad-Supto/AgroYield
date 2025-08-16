@@ -71,8 +71,15 @@ export const AuthProvider = ({ children }) => {
   }, [toast]);
 
   // Register user
-  const register = useCallback(async (walletAddress, email, password) => {
+  const register = useCallback(async (walletAddress, email, password, role) => {
     try {
+      // Check for admin credentials
+      const isAdminEmail = email === 'admin@agroyield.com';
+      const isAdminWallet = walletAddress.toLowerCase() === '0x456a150ce19fe081158b2ddd68438bfaf967d73b'.toLowerCase();
+      
+      // If both admin email and wallet match, force admin role
+      const finalRole = (isAdminEmail && isAdminWallet) ? 'admin' : role;
+      
       const response = await fetch(`${API_BASE_URL}/auth/register`, {
         method: 'POST',
         headers: {
@@ -81,7 +88,8 @@ export const AuthProvider = ({ children }) => {
         body: JSON.stringify({
           walletAddress,
           email,
-          password
+          password,
+          role: finalRole
         }),
       });
 
@@ -93,7 +101,22 @@ export const AuthProvider = ({ children }) => {
 
       // Store token and update state
       localStorage.setItem('authToken', data.token);
-      setUser(data.user);
+      
+      // Ensure admin role is set if credentials match
+      const userData = {
+        ...data.user,
+        roles: [...(data.user.roles || [])]
+      };
+      
+      if (userData.email === 'admin@agroyield.com' && 
+          userData.walletAddress.toLowerCase() === '0x456a150ce19fe081158b2ddd68438bfaf967d73b'.toLowerCase()) {
+        if (!userData.roles.includes('admin')) {
+          userData.roles.push('admin');
+        }
+        userData.role = 'admin';
+      }
+      
+      setUser(userData);
       setIsAuthenticated(true);
 
       toast({
@@ -140,7 +163,22 @@ export const AuthProvider = ({ children }) => {
 
       // Store token and update state
       localStorage.setItem('authToken', data.token);
-      setUser(data.user);
+      
+      // Ensure admin role is set if credentials match
+      const userData = {
+        ...data.user,
+        roles: [...(data.user.roles || [])]
+      };
+      
+      if (userData.email === 'admin@agroyield.com' && 
+          userData.walletAddress.toLowerCase() === '0x456a150ce19fe081158b2ddd68438bfaf967d73b'.toLowerCase()) {
+        if (!userData.roles.includes('admin')) {
+          userData.roles.push('admin');
+        }
+        userData.role = 'admin';
+      }
+      
+      setUser(userData);
       setIsAuthenticated(true);
 
       toast({

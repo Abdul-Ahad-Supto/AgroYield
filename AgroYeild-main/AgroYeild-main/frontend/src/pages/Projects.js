@@ -52,7 +52,7 @@ import {
   FaExclamationTriangle,
   FaEye
 } from 'react-icons/fa';
-import { useWeb3 } from '../contexts/Web3Context.Backup';
+import { useWeb3 } from '../contexts/Web3Context';
 import { useContracts } from '../hooks/useContracts';
 
 const Projects = () => {

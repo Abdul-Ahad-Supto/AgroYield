@@ -155,7 +155,7 @@ const Home = () => {
         <Stack direction={['column', 'row']} spacing={4} justify="center">
           <Button
             as={RouterLink}
-            to="/create-account"
+            to="../../auth"
             colorScheme="teal"
             size="lg"
           >

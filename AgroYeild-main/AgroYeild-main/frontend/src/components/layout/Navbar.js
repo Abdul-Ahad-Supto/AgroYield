@@ -21,8 +21,9 @@ import {
 } from '@chakra-ui/react';
 import { Link as RouterLink, useNavigate } from 'react-router-dom';
 import { MoonIcon, SunIcon, HamburgerIcon, CloseIcon } from '@chakra-ui/icons';
-import { FaEthereum, FaShieldAlt } from 'react-icons/fa';
-import { useWeb3 } from '../../contexts/Web3Context.Backup';
+import { FaEthereum, FaShieldAlt, FaSeedling, FaMoneyBillWave } from 'react-icons/fa';
+import { useAuth } from '../../contexts/AuthContext';
+import { useWeb3 } from '../../contexts/Web3Context';
 
 const NavLink = ({ children, to }) => (
   <Link
@@ -44,77 +45,63 @@ const Navbar = () => {
   const { colorMode, toggleColorMode } = useColorMode();
   const { isOpen, onOpen, onClose } = useDisclosure();
   
-  // ✅ FIXED: Added disconnectWallet
+  const { 
+    isAuthenticated,
+    user,
+    logout,
+    isConnected: authWalletConnected,
+    walletAddress: authWalletAddress,
+    connectWallet
+  } = useAuth();
+  
   const { 
     account, 
-    isConnected, 
-    connectWallet, 
-    disconnectWallet, 
-    contracts 
+    isConnected: web3Connected, 
+    disconnectWallet 
   } = useWeb3();
   
   const navigate = useNavigate();
-  const [userRoles, setUserRoles] = useState({});
   const [isAdmin, setIsAdmin] = useState(false);
 
-  // ✅ FIXED: Memoized checkUserRoles function
-  const checkUserRoles = useCallback(async () => {
-    if (!contracts || !account) {
-      return { isFarmer: false, isInvestor: false, isValidator: false };
-    }
-
-    try {
-      const roles = {};
-      
-      if (contracts.projectFactory) {
-        const FARMER_ROLE = await contracts.projectFactory.FARMER_ROLE();
-        const VALIDATOR_ROLE = await contracts.projectFactory.VALIDATOR_ROLE();
-        roles.isFarmer = await contracts.projectFactory.hasRole(FARMER_ROLE, account);
-        roles.isValidator = await contracts.projectFactory.hasRole(VALIDATOR_ROLE, account);
-      }
-      
-      if (contracts.investmentManager) {
-        const INVESTOR_ROLE = await contracts.investmentManager.INVESTOR_ROLE();
-        roles.isInvestor = await contracts.investmentManager.hasRole(INVESTOR_ROLE, account);
-      }
-      
-      return roles;
-    } catch (error) {
-      console.error('Error checking user roles:', error);
-      return { isFarmer: false, isInvestor: false, isValidator: false };
-    }
-  }, [contracts, account]);
-
-  // ✅ FIXED: Added checkUserRoles to dependencies
+  // Check if user is admin
   useEffect(() => {
-    const checkPermissions = async () => {
-      if (isConnected && contracts) {
-        try {
-          const roles = await checkUserRoles();
-          setUserRoles(roles);
-          setIsAdmin(
-            roles.isValidator || 
-            account?.toLowerCase() === process.env.REACT_APP_ADMIN_ADDRESS?.toLowerCase()
-          );
-        } catch (error) {
-          console.error('Error checking permissions:', error);
-        }
-      }
-    };
+    if (user) {
+      // Admin check - you can modify this logic based on your requirements
+      const adminEmails = ['admin@agroyield.com', 'validator@agroyield.com'];
+      const isUserAdmin = adminEmails.includes(user.email) || 
+                         (user.roles && user.roles.includes('admin')) ||
+                         (user.roles && user.roles.includes('validator'));
+      setIsAdmin(isUserAdmin);
+    } else {
+      setIsAdmin(false);
+    }
+  }, [user]);
 
-    checkPermissions();
-  }, [isConnected, contracts, account, checkUserRoles]);
-
-  // ✅ FIXED: Don't mutate original array
   const getNavigationLinks = () => {
+    if (!isAuthenticated) {
+      return [
+        { name: 'Home', path: '/' },
+        { name: 'Projects', path: '/projects' }
+      ];
+    }
+
     const baseLinks = [
+      { name: 'Dashboard', path: '/dashboard' },
       { name: 'Projects', path: '/projects' },
-      { name: 'Governance', path: '/governance' },
-      { name: 'Create Project', path: '/create-project' },
+      { name: 'Governance', path: '/governance' }
     ];
 
+    // Add role-specific links
+    if (user?.roles?.includes('farmer')) {
+      baseLinks.push({ name: 'Create Project', path: '/create-project' });
+    }
+
     if (isAdmin) {
-      return [...baseLinks, { name: 'Admin Panel', path: '/admin', admin: true }];
+      baseLinks.push({ 
+        name: 'Admin Panel', 
+        path: '/admin', 
+        admin: true 
+      });
     }
     
     return baseLinks;
@@ -125,6 +112,45 @@ const Navbar = () => {
   const formatAddress = (address) => {
     if (!address) return '';
     return `${address.substring(0, 6)}...${address.substring(address.length - 4)}`;
+  };
+
+  const handleLogout = () => {
+    logout();
+    if (web3Connected) {
+      disconnectWallet();
+    }
+    navigate('/');
+  };
+
+  const displayAddress = authWalletAddress || account;
+  const walletConnected = authWalletConnected || web3Connected;
+
+  const getRoleBadge = () => {
+    if (!user) return null;
+    
+    const roleConfig = {
+      farmer: { color: 'green', icon: FaSeedling, label: 'Farmer' },
+      investor: { color: 'blue', icon: FaMoneyBillWave, label: 'Investor' },
+      admin: { color: 'purple', icon: FaShieldAlt, label: 'Admin' }
+    };
+    
+    // Check for admin in roles array first
+    if (user.roles?.includes('admin') || user.email === 'admin@agroyield.com') {
+      return (
+        <Badge colorScheme="purple" size="sm" ml={2}>
+          Admin
+        </Badge>
+      );
+    }
+    
+    // Fall back to regular role
+    const config = roleConfig[user.role] || roleConfig.investor;
+    
+    return (
+      <Badge colorScheme={config.color} size="sm" ml={2}>
+        {config.label}
+      </Badge>
+    );
   };
 
   return (
@@ -165,7 +191,7 @@ const Navbar = () => {
               {colorMode === 'light' ? <MoonIcon /> : <SunIcon />}
             </Button>
             
-            {isConnected ? (
+            {isAuthenticated ? (
               <Menu>
                 <MenuButton
                   as={Button}
@@ -177,17 +203,22 @@ const Navbar = () => {
                   <HStack spacing={2}>
                     <Avatar
                       size={'sm'}
-                      name={account}
-                      src={`https://avatars.dicebear.com/api/identicon/${account}.svg`}
+                      name={user?.profile?.name || user?.email}
+                      src={user?.profile?.profilePicture}
                     />
-                    <Text display={{ base: 'none', md: 'flex' }}>
-                      {formatAddress(account)}
-                    </Text>
-                    {isAdmin && (
-                      <Badge colorScheme="purple" size="sm">
-                        Admin
-                      </Badge>
-                    )}
+                    <Box display={{ base: 'none', md: 'flex' }} flexDirection="column" alignItems="flex-start">
+                      <HStack spacing={1}>
+                        <Text fontSize="sm" fontWeight="medium">
+                          {user?.profile?.name || formatAddress(displayAddress)}
+                        </Text>
+                        {getRoleBadge()}
+                      </HStack>
+                      {walletConnected && (
+                        <Text fontSize="xs" color="gray.500" fontFamily="mono">
+                          {formatAddress(displayAddress)}
+                        </Text>
+                      )}
+                    </Box>
                   </HStack>
                 </MenuButton>
                 <MenuList zIndex={9999}>
@@ -197,6 +228,19 @@ const Navbar = () => {
                   <MenuItem onClick={() => navigate('/profile')}>
                     Profile
                   </MenuItem>
+                  
+                  {!user?.isKYCVerified && (
+                    <MenuItem onClick={() => navigate('/kyc')}>
+                      Complete KYC
+                    </MenuItem>
+                  )}
+                  
+                  {user?.roles?.includes('farmer') && (
+                    <MenuItem onClick={() => navigate('/create-project')}>
+                      Create Project
+                    </MenuItem>
+                  )}
+                  
                   {isAdmin && (
                     <>
                       <MenuDivider />
@@ -206,24 +250,48 @@ const Navbar = () => {
                           <Text>Admin Panel</Text>
                         </HStack>
                       </MenuItem>
+                      <MenuItem onClick={() => navigate('/admin/kyc')}>
+                        <HStack>
+                          <FaShieldAlt />
+                          <Text>KYC Management</Text>
+                        </HStack>
+                      </MenuItem>
                     </>
                   )}
+                  
                   <MenuDivider />
-                  {/* ✅ FIXED: Added onClick handler */}
-                  <MenuItem onClick={disconnectWallet} color="red.500">
-                    Disconnect Wallet
+                  
+                  {!walletConnected && (
+                    <MenuItem onClick={connectWallet}>
+                      Connect Wallet
+                    </MenuItem>
+                  )}
+                  
+                  <MenuItem onClick={handleLogout} color="red.500">
+                    Sign Out
                   </MenuItem>
                 </MenuList>
               </Menu>
             ) : (
-              <Button
-                colorScheme="teal"
-                onClick={connectWallet}
-                isLoading={false}
-                loadingText="Connecting..."
-              >
-                Connect Wallet
-              </Button>
+              <HStack spacing={3}>
+                {walletConnected && (
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    leftIcon={<FaEthereum />}
+                  >
+                    {formatAddress(displayAddress)}
+                  </Button>
+                )}
+                <Button
+                  as={RouterLink}
+                  to="/auth"
+                  colorScheme="teal"
+                  size="sm"
+                >
+                  Sign In
+                </Button>
+              </HStack>
             )}
           </Stack>
         </Flex>
@@ -235,8 +303,25 @@ const Navbar = () => {
             {Links.map((link) => (
               <NavLink key={link.name} to={link.path} onClick={onClose}>
                 {link.name}
+                {link.admin && (
+                  <Badge ml={1} colorScheme="purple" size="sm">
+                    Admin
+                  </Badge>
+                )}
               </NavLink>
             ))}
+            
+            {!isAuthenticated && (
+              <Button
+                as={RouterLink}
+                to="/auth"
+                colorScheme="teal"
+                size="sm"
+                onClick={onClose}
+              >
+                Sign In
+              </Button>
+            )}
           </Stack>
         </Box>
       ) : null}

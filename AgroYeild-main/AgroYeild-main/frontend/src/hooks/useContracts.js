@@ -1,6 +1,6 @@
 import { useState, useCallback } from 'react';
 import { ethers } from 'ethers';
-import { useWeb3 } from '../contexts/Web3Context.Backup';
+import { useWeb3 } from '../contexts/Web3Context';
 import { useToast } from '@chakra-ui/react';
 
 export const useContracts = () => {
